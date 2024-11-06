@@ -8,9 +8,8 @@ export function setupChannelHandlers(io: Namespace) {
   io.on("connection", (socket: Socket) => {
     console.log("Client connected to channel namespace");
 
-    socket.on("join-room", (channelId: string) => {
+    socket.on("join-room", (channelId: string,memberId) => {
       socket.join(channelId);
-      console.log(`User joined channel: ${channelId}`);
     });
 
     socket.on("send-message", async (message: Message) => {

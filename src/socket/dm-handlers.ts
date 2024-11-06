@@ -19,7 +19,7 @@ export function setupDirectMessageHandlers(io: Namespace) {
             body: message.body,
             memberId: message.memberId,
             workspaceId: message.workspaceId,
-            // For DMs, we don't set channelId
+            
           }
         });
 

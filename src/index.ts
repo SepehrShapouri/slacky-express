@@ -7,6 +7,7 @@ import { socketAuthMiddleware } from './middleware/socket-auth';
 import { setupChannelHandlers } from './socket/channel-handlers';
 import { setupDirectMessageHandlers } from './socket/dm-handlers';
 import { errorHandler } from './middleware/error-handlers';
+import { setupWorkspaceHandlers } from './socket/workspace-handler';
 
 
 const app = express();
@@ -20,22 +21,22 @@ const io = new Server(server, {
 
 export const prisma = new PrismaClient();
 
-// Middleware
+//
 app.use(cors());
 app.use(express.json());
 
-// Socket.IO middleware
+
 io.use(socketAuthMiddleware);
 
-// Create separate namespaces for channels and DMs
+
 const channelNamespace = io.of('/channels');
 const dmNamespace = io.of('/dms');
+const workspaceNamespace = io.of('/workspaces')
 
-// Setup socket handlers
 setupChannelHandlers(channelNamespace);
 setupDirectMessageHandlers(dmNamespace);
+setupWorkspaceHandlers(workspaceNamespace)
 
-// Error handling
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
@@ -43,7 +44,7 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Graceful shutdown
+
 process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
