@@ -8,7 +8,7 @@ export function setupChannelHandlers(io: Namespace) {
   io.on("connection", (socket: Socket) => {
     console.log("Client connected to channel namespace");
 
-    socket.on("join-room", (channelId: string,memberId) => {
+    socket.on("join-room", (channelId: string, memberId) => {
       socket.join(channelId);
     });
 
@@ -34,7 +34,6 @@ export function setupChannelHandlers(io: Namespace) {
         if (!member) {
           socket.emit("error", new SocketError("Unauthorized"));
         }
-        console.log(message);
         const savedMessage = await prisma.messages.create({
           data: {
             body: message.body,
@@ -77,7 +76,7 @@ export function setupChannelHandlers(io: Namespace) {
             body: editedMessage.body,
             updatedAt: new Date(),
           },
-           include: {
+          include: {
             member: {
               include: {
                 user: {
@@ -96,7 +95,6 @@ export function setupChannelHandlers(io: Namespace) {
         socket.emit("error", new SocketError("Failed to edit message"));
       }
     });
-
     socket.on(
       "delete-message",
       async (messageId: string, channelId?: string) => {
@@ -115,6 +113,128 @@ export function setupChannelHandlers(io: Namespace) {
         }
       }
     );
+    socket.on(
+      "reaction",
+      async ({
+        messageId,
+        memberId,
+        reaction,
+        channelId,
+      }: {
+        messageId: string;
+        memberId: number;
+        reaction: string;
+        channelId: string;
+      }) => {
+        try {
+          const existingReaction = await prisma.reactions.findUnique({
+            where: {
+              messageId_memberId_value: {
+                memberId,
+                messageId,
+                value: reaction,
+              },
+            },
+          });
+          if (existingReaction) {
+            const updatedMessage = await prisma.$transaction(async (tx) => {
+              await tx.reactions.delete({
+                where: {
+                  messageId_memberId_value: {
+                    memberId,
+                    messageId,
+                    value: reaction,
+                  },
+                },
+              });
+              const updatedMessage = await tx.messages.findUnique({
+                where: {
+                  id: messageId,
+                },
+                include: {
+                  member: {
+                    include: {
+                      user: {
+                        select: {
+                          avatarUrl: true,
+                          fullname: true,
+                          email: true,
+                        },
+                      },
+                    },
+                  },
+                  reactions: {
+                    include: {
+                      member: {
+                        select: {
+                          user: {
+                            select: {
+                              fullname: true,
+                              avatarUrl: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              });
+              return updatedMessage;
+            });
+            io.to(channelId).emit("reaction-added", updatedMessage);
+            return
+          }
+          const updatedMessage = await prisma.$transaction(async (tx) => {
+            await tx.reactions.create({
+              data: {
+                memberId,
+                messageId,
+                value: reaction,
+              },
+            });
+            const updatedMessage = await tx.messages.findUnique({
+              where: {
+                id: messageId,
+              },
+              include: {
+                member: {
+                  include: {
+                    user: {
+                      select: {
+                        avatarUrl: true,
+                        fullname: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+                reactions: {
+                  include: {
+                    member: {
+                      select: {
+                        user: {
+                          select: {
+                            fullname: true,
+                            avatarUrl: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            });
+            return updatedMessage;
+          });
+
+          io.to(channelId).emit("reaction-added", updatedMessage);
+        } catch (error) {
+          console.log(error);
+          socket.emit("error", new SocketError("Failed to add reaction"));
+        }
+      }
+    );
+
     socket.on("disconnect", () => {
       console.log("Client disconnected from channel namespace");
     });

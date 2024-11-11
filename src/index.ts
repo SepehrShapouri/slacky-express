@@ -14,14 +14,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3001",
+    origin:process.env.NODE_ENV == 'production' ?  process.env.CLIENT_URL : "http://localhost:3001",
     methods: ["GET", "POST"]
   }
 });
 
 export const prisma = new PrismaClient();
 
-//
+
 app.use(cors());
 app.use(express.json());
 
