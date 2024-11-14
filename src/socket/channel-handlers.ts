@@ -55,6 +55,20 @@ export function setupChannelHandlers(io: Namespace) {
                 },
               },
             },
+            reactions: {
+              include: {
+                member: {
+                  select: {
+                    user: {
+                      select: {
+                        fullname: true,
+                        avatarUrl: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         });
 
@@ -84,6 +98,20 @@ export function setupChannelHandlers(io: Namespace) {
                     avatarUrl: true,
                     fullname: true,
                     email: true,
+                  },
+                },
+              },
+            },
+            reactions: {
+              include: {
+                member: {
+                  select: {
+                    user: {
+                      select: {
+                        fullname: true,
+                        avatarUrl: true,
+                      },
+                    },
                   },
                 },
               },
@@ -182,7 +210,7 @@ export function setupChannelHandlers(io: Namespace) {
               return updatedMessage;
             });
             io.to(channelId).emit("reaction-added", updatedMessage);
-            return
+            return;
           }
           const updatedMessage = await prisma.$transaction(async (tx) => {
             await tx.reactions.create({
