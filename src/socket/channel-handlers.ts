@@ -116,6 +116,38 @@ export function setupChannelHandlers(io: Namespace) {
                 },
               },
             },
+            replies: {
+              include: {
+                member: {
+                  include: {
+                    user: {
+                      select: {
+                        avatarUrl: true,
+                        fullname: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+                reactions: {
+                  include: {
+                    member: {
+                      include: {
+                        user: {
+                          select: {
+                            fullname: true,
+                            avatarUrl: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
           },
         });
         io.to(editedMessage.channelId!).emit("message-updated", updatedMessage);
@@ -127,10 +159,13 @@ export function setupChannelHandlers(io: Namespace) {
       "delete-message",
       async (messageId: string, channelId?: string) => {
         try {
-          const deletedMessage = await prisma.messages.delete({
-            where: { id: messageId },
+          const deletedMessage = await prisma.$transaction(async (tx) => {
+            await tx.messages.deleteMany({ where: { parentId: messageId } });
+            const deletedMessage = await tx.messages.delete({
+              where: { id: messageId },
+            });
+            return deletedMessage;
           });
-
           io.to(channelId!).emit(
             "message-deleted",
             messageId,
@@ -205,6 +240,38 @@ export function setupChannelHandlers(io: Namespace) {
                       },
                     },
                   },
+                  replies: {
+                    include: {
+                      member: {
+                        include: {
+                          user: {
+                            select: {
+                              avatarUrl: true,
+                              fullname: true,
+                              email: true,
+                            },
+                          },
+                        },
+                      },
+                      reactions: {
+                        include: {
+                          member: {
+                            include: {
+                              user: {
+                                select: {
+                                  fullname: true,
+                                  avatarUrl: true,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
+                  },
                 },
               });
               return updatedMessage;
@@ -248,6 +315,38 @@ export function setupChannelHandlers(io: Namespace) {
                         },
                       },
                     },
+                  },
+                },
+                replies: {
+                  include: {
+                    member: {
+                      include: {
+                        user: {
+                          select: {
+                            avatarUrl: true,
+                            fullname: true,
+                            email: true,
+                          },
+                        },
+                      },
+                    },
+                    reactions: {
+                      include: {
+                        member: {
+                          include: {
+                            user: {
+                              select: {
+                                fullname: true,
+                                avatarUrl: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  orderBy: {
+                    createdAt: "desc",
                   },
                 },
               },
