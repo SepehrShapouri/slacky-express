@@ -361,7 +361,10 @@ export function setupChannelHandlers(io: Namespace) {
         }
       }
     );
-
+    socket.on('send-reply',(newReply:Message,channelId:string)=>{
+      console.log(newReply,'in server')
+    io.to(channelId).emit("new-reply",newReply)
+    })
     socket.on("disconnect", () => {
       console.log("Client disconnected from channel namespace");
     });
