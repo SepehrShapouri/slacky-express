@@ -6,4 +6,5 @@ export type Message = {
   memberId: number;
   attachments: string[];
   key?: string;
+  conversationId?:string
 };

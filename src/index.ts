@@ -1,14 +1,14 @@
+import { PrismaClient } from "@prisma/client";
+import cors from "cors";
 import express from "express";
 import http from "http";
-import cors from "cors";
 import { Server } from "socket.io";
-import { PrismaClient } from "@prisma/client";
+import { errorHandler } from "./middleware/error-handlers";
 import { socketAuthMiddleware } from "./middleware/socket-auth";
 import { setupChannelHandlers } from "./socket/channel-handlers";
-import { setupDirectMessageHandlers } from "./socket/dm-handlers";
-import { errorHandler } from "./middleware/error-handlers";
-import { setupWorkspaceHandlers } from "./socket/workspace-handler";
+import { setupConversationHandlers } from "./socket/conversation-handlers";
 import { setupThreadHandlers } from "./socket/thread-handlers";
+import { setupWorkspaceHandlers } from "./socket/workspace-handler";
 
 const app = express();
 const server = http.createServer(app);
@@ -30,11 +30,11 @@ app.use(express.json());
 io.use(socketAuthMiddleware);
 
 const channelNamespace = io.of("/channels");
-const dmNamespace = io.of("/dms");
+const conversationNamespace = io.of("/conversation");
 const workspaceNamespace = io.of("/workspaces");
 const threadNamespace = io.of("/threads");
 setupChannelHandlers(channelNamespace);
-setupDirectMessageHandlers(dmNamespace);
+setupConversationHandlers(conversationNamespace);
 setupWorkspaceHandlers(workspaceNamespace);
 setupThreadHandlers(threadNamespace);
 

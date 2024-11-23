@@ -10,6 +10,7 @@ export function setupThreadHandlers(io: Namespace) {
 
     socket.on("join-thread", (threadId: string, memberId) => {
       socket.join(threadId);
+    console.log('user joined thread',threadId)
     });
 
     socket.on(
